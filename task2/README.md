@@ -10,7 +10,7 @@ For this task, we had to implement a circuit that generates a state with equal p
 
 ### Implementation
 
-### The circuit
+#### The circuit
 
 Let's first reason what is the simplest circuit that can generate the goal state. So far, the only restriction we've been imposed is that the resulting state have 0.5 probability of measuring |01> and |10>. Any state of the form |01> + e^{i \phi}|10> (up to a global phase) will do.
 
@@ -35,11 +35,11 @@ One could think how to make sure we're generating |01> + |10> and not some other
 
 I've implemented the second option (in this case, I haven't converted the Hadamard to RXs and RYs, and there is no parameter to optimize). Notice that even though I'm using a gate outside the set of gates we've been allowed, this is only to measure in the right basis and it does not take part on the circuit that generates the desired state. Anyway, the first option would work as well.
 
-### Noise generation
+#### Noise generation
 
 For this task, I'm using qiskit, so I've used one of the noise models that come with it. To be precise, I've simulated all iterations using the noise model from the Vigo chip.
 
-### The algorithm
+#### The algorithm
 
 There are two key points to consider when implementing the algorithm. First of all, we're going to run all iterations with sampling. Therefore, we'll only have access to the final measurements. Second, in order to variationally find the best parameters, we need to choose a cost function. Taking into account that we'll only know the measured probabilities after each iteration, I've chosen to maximize the loglikelihood of the probability function induced by the state we want to generate, a fair binomial distribution with two possible outcomes.
 
@@ -55,7 +55,7 @@ The sketch of the algorithm, without entering on details about the gradient desc
 4. Update the parameters using gradient descent (i.e. in the direction in which the cost function is minimized the greatest)
 5. Repeat from 2 until convergence.
 
-## Using the program
+### Using the program
 
 The code is given as a CLI program. After installing the requirements using `pip install -r requirements.txt` run it with
 
@@ -78,11 +78,11 @@ optional arguments:
   -v, --verbose         Print debugging messages to stdout
 ```
 
-## Results
+### Results
 
 I present here the results of the simulations, including the final parameters, the resulting statevector and the results of a simulation with those parameters.
 
-### Computational basis
+#### Computational basis
 
 In this basis, the circuit, together with the measurements, is:
     
@@ -130,7 +130,7 @@ Finally, an example of simulated counts are:
 | 1000   | 27 | 465 | 496 | 12 |
 
 
-### Bell basis
+#### Bell basis
 
 In this basis, the circuit with measurements is:
     
@@ -177,11 +177,10 @@ Finally, the simulated counts are:
 | 100    | 2  | 0  | 98  | 0  |
 | 1000   | 26 | 0  | 968 | 6  |
 
-## Conclusions
+### Conclusions
 
 We have built the circuit and generated the states with equal probability of measuring |01> and |10>. To do so, we have shown what is the simplest circuit that can generate such a state and have chosen an appropriate cost function. The optimization has shown that a small number of shots is not enough to reach a right set of parameters, which we have interpreted as an effect of the two sources of stochastic behaviour in the algorithm: the measurements and the noise. For 1000 iterations, the fidelity between the resulting state and the goal state is 0.9997.
 
 We've also shown how to make sure we are generating the state with a specific relative phase, which has also demonstrated the effect of the difference in the random effect introduced by measuring in different bases. In this case, the fidelity of the final state with 1000 shots per iteration is 0.99998. However, to show this we have needed to introduce a Hadamard gate, although not in the circuit that generates the state, but in the later part, to be able to measure in the basis we wanted to. We have also given another way of ensuring convergence towards the |01> + |10> state by reasoning about the circuit we are using and constraining the parameter ranges.
 
 To keep working on the task, it would be interesting to understand the effect of noise by comparing these results to simulations without noise and simulations with noise mitigation techniques.
-
