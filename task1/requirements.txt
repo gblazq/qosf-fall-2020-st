@@ -1,0 +1,5 @@
+exitstatus==2.0.1
+numpy==1.18.4
+qiskit==0.20.1
+scipy==1.4.1
+

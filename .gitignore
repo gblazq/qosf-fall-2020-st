@@ -138,4 +138,7 @@ dmypy.json
 cython_debug/
 
 *.log
+!results_*.log
 *.csv
+!results_*.csv
+

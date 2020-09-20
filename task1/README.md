@@ -46,7 +46,7 @@ Each of the parameters θ_i is a vector of parameters, one for each gate in the 
 
 The circuit and the execution are made using Qiskit. Obviously, we need to access the resulting state vector, so we do need to simulate the whole state using the `statevector_simulator` backend. For the optimization, I used `scipy.optimize.minimize` which used the L-BFGS-B solver.
 
-The set of parameters are to be initialized between 0 and 2π. Actually, the angles should be between 0 and 4π, since that's the parameter range for single qubit rotations (RX, RY and RZ angles are divided by 2). However, notice that all matrix elements different than 0 in those matrices are trigonometric functions (sin(θ/2) or cos(θ/2) for RX and RY and exp(iθ/2) for RZ), which have the property that f(θ/2 + π) = -f(θ/2). Therefore, all three matrices have period 2π up to a global phase. One might think that a global phase is irrelevant, and of course that's true in theory, but there is a peculiarity that we have to consider. The cost function is defined as the squared norm of the difference between the vector we are generating and a random vector. Here, the global phase is not irrelevant. For a fixed random vector, two physically equivalent vectors like |v> and e^{i \phi}|v> would produce very different metrics. Therefore, we have to make sure that our circuit will be able to arbitrarily approximate any vector in the Hilbert space, provided it has enough layers. Otherwise, had we the bad luck to pick a random vector that is unreachable by our circuit, we could end up with a less than optimal solution.
+The set of parameters are to be initialized between 0 and 2π. Actually, the angles should be between 0 and 4π, since that's the parameter range for single qubit rotations (RX, RY and RZ angles are divided by 2). However, notice that all matrix elements different than 0 in those matrices are trigonometric functions (sin(θ/2) or cos(θ/2) for RX and RY and exp(±iθ/2) for RZ), which have the property that f(θ/2 + π) = -f(θ/2). Therefore, all three matrices have period 2π up to a global phase. One might think that a global phase is irrelevant, and of course that's true in theory, but there is a peculiarity that we have to consider. The cost function is defined as the squared norm of the difference between the vector we are generating and a random vector. Here, the global phase is not irrelevant. For a fixed random vector, two physically equivalent vectors like |v> and e^{i \phi}|v> would produce very different metrics. Therefore, we have to make sure that our circuit will be able to arbitrarily approximate any vector in the Hilbert space, provided it has enough layers. Otherwise, had we the bad luck to pick a random vector that is unreachable by our circuit, we could end up with a less than optimal solution.
 
 To convince ourselves that this is the case, consider a circuit with L layers. If one of the subblocks consists of RZs, we could use the other 2L-1 subblocks to build a state as close as possible to our goal state, up to a global phase, and then use the RZs to tune the phase. If there are no RZs, they can be approximated up to a phase with RXs and RYs. Therefore, the global phase is still irrelevant in the sense that it can be approximated with our circuit even though we are restricting the angles range.
 
@@ -102,9 +102,11 @@ optional arguments:
 
 ### Results
 
+The [results](results) folder contains the CSV files produced by the program.
+
 #### RX and RZ gates
 
-The results can be reproduced with the following command
+The execution with the default gates can be reproduced with the following command
 
 ```bash
 /main.py 7 results.csv -i 10 -s 1234
@@ -122,13 +124,17 @@ There is another interesting way to look at this, which we can use to understand
 
 It can be seen how at L=4 there is a spike in the number of iterations we need to reach convergence. After L=4, adding more layers results in less fine tuning of the parameters and relatively few gains in the minimum distance. 
 
-I think there are two reasons for this behaviour. First, the more layers there are, the more parameters. In principle, 12 parameters (one U3 rotation per qubit) with controlled gates between all qubits should be enough to arbitrarily approximate any 4-qubit unitary, but the more parameters the easier it should be to reach any unitary to arbitrary precision. This could explain the initial exponential decrease in the metric. The behaviour for L >= 5 could be, at least in part, explained by the tolerances we are using in the optimization. We would probably would not see any further significant increase in the metric with a greater number of layers, and the number of iterations would decrease for a fixed tolerance because, as I already mentioned, it would be easier to reach the required convergence with more parameters.
+I think there are two reasons for this behaviour. First, the more layers there are, the more parameters. This could explain the initial exponential decrease in the metric. The behaviour for L >= 5 could be, at least in part, explained by the tolerances we are using in the optimization. We would probably not see any further significant increase in the metric with a greater number of layers, and the number of iterations would decrease for a fixed tolerance because, as I already mentioned, it would be easier to reach the required convergence with more parameters.
 
 #### Other gates
 
 The program has two parameters to optimize the circuit with gates different than the default. The options are RX, RY, RZ, U1, PHASE, U2 and U3 gates. Of these, one should expect a similar behaviour if any of the default gates (RX and RZ) were replaced by RY, U1 and PHASE gates. The latter two are the most obvious ones, since they are the same and differ from RZ by a phase. The RY gate is similar to the other two in the sense that it rotates a qubit by a single axis, so I don't expect it to make a difference.
 
-The U2 and U3, though, are good candidates to improve the convergence towards the random vector. They have 2 and 3 parameters, respectively, and they act by rotating a qubit by two or three axes.
+The U2 and U3, though, are good candidates to improve the convergence towards the random vector. They have 2 and 3 parameters, respectively, and they act by rotating a qubit by two or three axes. However, when I ran the program with U3 gates in both odd and even blocks, the results were very similar to the previous ones.
+
+![Minim distance vs L with U3 gates](img/results_u3_u3.svg)
+
+I think the reason is that no matter which gates we choose, the actual limits are imposed by the number of gates. In order to arbitrarily approximate a four-qubit state, we need 9 CNOTs and 17 single-qubit rotations [1]. This means that we would need, at least, 9 CZs and 17 parameterized gates in our circuit, neglecting other facts and making a one-to-one correspondence. That's only possible after L=3. Moreover, our circuit doesn't have the gates in the specific order mentioned in [1], so it makes sense that we would be a small overhead. Also, regarding the number of single-qubit gates, using two U3 is not different to using a single U3, since a single U3 is already the most general single-qubit rotation. On the other hand, an RZ and an RX together are not a general rotation, but after several layers they are probably enough to approximate any rotation. All together, this results signal that the circuit structure is more important than the specific gates we choose, for the variety of reasons explained.
 
 ### Conclusions
 
@@ -136,4 +142,6 @@ We have implemented the circuit and optimized the cost function. Its behaviour w
 
 We have hypothesized that this is due to two factors. The first one is the increase in the number of parameters with each layer, which make the circuit easier to arbitrarily approximate any given unitary. The other factor are the convergence criteria of the algorithm, which probably make the optimization stop at greater L at good but maybe not optimum values. This last factor is supported by the number of iterations needed until convergence.
 
-To keep working on the task, it would be interesting to understand whether these two factors are the key drivers of the convergence and what's their influence with more detail. We could, for example, fine tune the hyperparameters to see whether the cost function and gradient tolerances are stopping convergence before reaching a global minimum. We could also try another optimization algorithms and try to replicate the results. The behaviour around L=4 seems interesting. One could, very handwavely, look at it as a critical point in a phase transition. However, before understanding it in terms of the parameters we should verify that it is not an artifact of the algorithm.
+We have also seen that using more general rotations does not reduce the cost function significantly, and we have used known results to hypothesize that the circuit structure is more important than the gates we choose.
+
+To keep working on the task, it would be interesting to understand whether these factors are the key drivers of the convergence and what's their influence with more detail. We could, for example, fine tune the hyperparameters to see whether the cost function and gradient tolerances are stopping convergence before reaching a global minimum. We could also try another optimization algorithms and try to replicate the results. The behaviour around L=4 seems interesting. One could, very handwavely, look at it as a critical point in a phase transition. However, before understanding it in terms of the parameters we should verify that it is not an artifact of the algorithm. Finally, to better understand the importance of the circuit structure, we could try to change it in some way and see if that does make a difference.
