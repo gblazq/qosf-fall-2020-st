@@ -145,3 +145,8 @@ We have hypothesized that this is due to two factors. The first one is the incre
 We have also seen that using more general rotations does not reduce the cost function significantly, and we have used known results to hypothesize that the circuit structure is more important than the gates we choose.
 
 To keep working on the task, it would be interesting to understand whether these factors are the key drivers of the convergence and what's their influence with more detail. We could, for example, fine tune the hyperparameters to see whether the cost function and gradient tolerances are stopping convergence before reaching a global minimum. We could also try another optimization algorithms and try to replicate the results. The behaviour around L=4 seems interesting. One could, very handwavely, look at it as a critical point in a phase transition. However, before understanding it in terms of the parameters we should verify that it is not an artifact of the algorithm. Finally, to better understand the importance of the circuit structure, we could try to change it in some way and see if that does make a difference.
+
+### References
+
+ [1] : Abhijith et al. Quantum Algorithm Implementation for Beginners, [https://arxiv.org/abs/1804.03719](https://arxiv.org/abs/1804.03719)
+ 
