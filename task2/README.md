@@ -55,7 +55,7 @@ The sketch of the algorithm, without entering on details about the gradient desc
 4. Update the parameters using gradient descent (i.e. in the direction in which the cost function is minimized the greatest)
 5. Repeat from 2 until convergence.
 
-The entry point of the program is the [main.py](main.py) file,  the [circuit.py](circuit.py) file contains the function that creates the circuit and the [optimizer.py](optimizer.py) file contains the functions that execute the circuit and compute the objective function.
+The entry point of the program is the [main.py](main.py) file,  the [circuit.py](task2/circuit.py) file contains the function that creates the circuit and the [optimizer.py](task2/optimizer.py) file contains the functions that execute the circuit and compute the objective function.
 
 ### Using the program
 
