@@ -52,6 +52,7 @@ def main():
     statevector_backend = Aer.get_backend('statevector_simulator')
 
     circuit = build_circuit(measure=basis)
+    circuit_for_counts = build_circuit(measure='computational')
     unmeasured_circuit = build_circuit(measure=None)
 
     # qiskit's COBYLA can't take args to pass to the objective function, so we freeze them with functools.partial
@@ -71,7 +72,7 @@ def main():
         params = ret[0]
         logger.debug(f'\nParameters:\n{params}')
         logger.debug(f'\nStatevector:\n{execute_circuit(unmeasured_circuit, params, statevector_backend).result().get_statevector()}')
-        logger.debug(f'\nSimulated results:\n{execute_circuit(circuit, params, backend, nshots, noise_model, coupling_map, basis_gates).result().get_counts()}')
+        logger.debug(f'\nSimulated results:\n{execute_circuit(circuit_for_counts, params, backend, nshots, noise_model, coupling_map, basis_gates).result().get_counts()}')
         logger.debug('====================================================================================\n')
 
     sys.exit(ExitStatus.success)

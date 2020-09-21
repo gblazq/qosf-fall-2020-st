@@ -168,14 +168,14 @@ The coefficients of the final state and the fidelity are:
 
 Notice how, after measuring in the Bell basis, the state has always the same relative phase between |01> and |10>, so we're actually generating an approximation for |01> + |10>. Regarding the convergence towards the state with respect to the number of shots, we see the same behaviour than before. This time, though, we're obtaining coefficients that are closer to the objective for 100 and 1000 iterations. The reason is that by measuring in the Bell basis we are effectively limiting the effect of one of the stochastic behaviours mentioned earlier, namely the fact that we're approximating a random variable with a set of measurements. In the computational basis, the right state (disregarding noise) will produce counts of the |01> and |10> states that are drawn from a binomial distribution, whereas in the Bell basis, all possible combinations of |01> and |10> counts are measured as a |\psi^+> state.
 
-Finally, the simulated counts are:
+Finally, the simulated counts are (using only the optimized circuit and measuring it in the computational basis, so we expect an equal number of |01> and |10>):
 
-| Shots  | 00 | 01 | 10  | 11 |
-| ------ | -- | -- | ----| -- |
-| 1      | 0  | 0  | 1   | 0  |
-| 10     | 2  | 0  | 5   | 3  |
-| 100    | 2  | 0  | 98  | 0  |
-| 1000   | 26 | 0  | 968 | 6  |
+| Shots  | 00 | 01  | 10  | 11 |
+| ------ | -- | --- | ----| -- |
+| 1      | 0  | 0   | 1   | 0  |
+| 10     | 2  | 0   | 8   | 0  |
+| 100    | 4  | 51  | 45  | 0  |
+| 1000   | 26 | 497 | 471 | 6  |
 
 ### Conclusions
 
