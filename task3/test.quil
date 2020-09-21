@@ -1,0 +1,15 @@
+H 0
+H 1
+H 2
+H 3
+CNOT 0 1
+CNOT 0 2
+CNOT 0 3
+RX(1.00) 1
+RY(pi) 3
+RZ(pi/2) 2
+X 0
+Y 0
+Z 1
+CNOT 2 1
+H 2
