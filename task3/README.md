@@ -252,9 +252,9 @@ Also, we could consider some metric that relates the gate fidelity to the qubit 
 
 I have implemented a very basic compiler using a DAG to represent quantum circuits. The compiler gets a Quil program as input and prints an equivalent Quil program, using only the specified subset of gates.
 
-As we have seen, the basic translations produce an overhead in different metrics that we can address with optimization techniques. The most simple of this metrics is gate depth. I have proposed several simple techniques to reduce the gate depth, and I have implemented the simplest ones to show their effect. To this end, the choice of a DAG as the data structure has been quite useful.
+As we have seen, the basic translations produce an overhead in different metrics that we can address with optimization techniques. The most simple of this metrics is gate depth. I have proposed several simple techniques to reduce the gate depth, and I have implemented the simplest ones, namely consecutive rotations simplification and cancellation of consecutive Hadamards, to show their effect. To this end, the choice of a DAG as the data structure has been quite useful, as it allows us to traverse the circuit independently of how we print or represent it, and we can focus on translating or optimizing sequences of gates.
 
-To continue with the task, it would be interesting to implement some of the other optimization techniques, like the approximation of single qubit rotations using Euler angles, which may supersede the optimizations I have implemented. Also, I would consider adding other overhead metrics like the ones proposed.
+To continue with the task, it would be interesting to implement some of the other optimization techniques, like the approximation of single qubit rotations using Euler angles, which may supersede the optimizations I have implemented. Also, I would consider adding other overhead metrics like the ones proposed in order to not have long-range controlled gates.
 
 ### References
 
