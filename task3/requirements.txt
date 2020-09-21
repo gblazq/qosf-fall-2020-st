@@ -1,0 +1,4 @@
+exitstatus==2.0.1
+numpy==1.18.4
+networkx==2.4
+

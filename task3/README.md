@@ -8,11 +8,11 @@ The input circuit can have gates from the following set: I, H, X, Y, Z, RX, RY, 
 
 ### Implementation
 
-I have implemented a CLI program that takes a Quil[1] program as an input and compiles the circuit to the restricted set of gates. The compiler actually implements a small subset of the Quil instructions, namely the previously mentioned gates (I, H, X, Y, Z, RX, RY, RZ, CNOT, CZ), which may be parameterized. 
+I have implemented a CLI program that takes a Quil[1] program as an input and compiles the circuit to the restricted set of gates. The compiler actually implements a small subset of the Quil instructions, namely the previously mentioned gates (I, H, X, Y, Z, RX, RY, RZ, CNOT, CZ). 
 
-Doing the basic version of the task is quite easy, as we only have to store the equivalences of each gate in terms of RX, RZ and CZ. However, if we aim to be able to do any kind of optimization, we need to use a data structure that allows us to traverse the circuit and find suitable translations or optimizations. For this reason, my compiler uses a direct acyclic graph (DAG) to represent the quantum circuit. The [circuit.py](task3/circuit.py) file contains the `Circuit` class, which can parse a Quil program into a DAG, compile the circuit by applying suitable translations and return the output as another Quil program.
+Doing the basic version of the task is quite easy, as we only have to store the equivalences of each gate in terms of RX, RZ and CZ. However, if we aim to be able to do any kind of optimization, we need to use a data structure that allows us to traverse the circuit and find suitable translations or optimizations. For this reason, my compiler uses a direct acyclic graph (DAG) to represent the quantum circuit. DAGs are common data structures for compilers, as they allow to store the action flow in an efficient way. The [circuit.py](task3/circuit.py) file contains the `Circuit` class, which can parse a Quil program into a DAG, compile the circuit by applying suitable translations and optimizations and print the output as another Quil program.
 
-To store a circuit as a DAG, I use two types of nodes, which can be found at [nodes.py](task3/nodes.py). The `Node` class implements the basic structure of a node. Any node with input and output edges must represent a gate. Gate nodes are instances of the `Gate` class, which stores attributes such as the gate type, any parameters, and the qubits the gate is applied to. To easily traverse the DAG, it also includes in and out qubits, which are instances of the `Qubit` class. Edges in the graph also store the qubit wire they represent as an attribute.
+To store a circuit as a DAG, I use two types of nodes, which can be found at [nodes.py](task3/nodes.py). The `Node` class implements the basic structure of a node. Any node with input and output edges must represent a gate. Gate nodes are instances of the `Gate` class, which stores attributes such as the gate type, any parameters, and the qubits the gate is applied to. To easily traverse the DAG, it also includes in and out qubits, which are instances of the `Qubit` class.
 
 The basic translators (which may introduce global phases) can be found at [translators.py](task3/translators.py). They are functions that take nodes as input and return a translation to the restricted set of gates if the gate is of a certain type.
 
@@ -129,7 +129,7 @@ There are different metrics one could use to quantify the overhead of a circuit.
 
 g(NH, NX, NY, NZ, NRX, NRY, NRZ, NCZ, NCNOT, NI) = 3(NH + NY + NRY) + 7NCNOT + NX + NZ + NRX + NRZ + NCZ + NI
 
-where NH is the number of H gates in the input circuit, etc. The gate depth overhead with respect to the input circuit would be
+gates, where NH is the number of H gates in the input circuit, etc. The gate depth overhead with respect to the input circuit would be
 
 g(NH, NX, NY, NZ, NRX, NRY, NRZ, NCZ, NCNOT, NI) = 2(NH + NY + NRY) + 6NCNOT
 
@@ -140,9 +140,9 @@ How could we simplify the output with respect to gate depth? There are several s
 - Collect consecutive rotations around the same axis and acting on the same qubit and replace them by a single rotation.
 - Detect commuting operations and commute them to see if that enables other possible optimizations.
 - Find groups of rotations on a qubit, decompose them into their Euler angles, and translate that general rotation to RXs and RZs. I think this could work if there are a great number of consecutive rotations in a qubit.
-- Find consecutive, cancelling operations and delete them (for example, two consecutive CNOTs on the same qubits).
+- Find consecutive, cancelling operations and delete them (for example, two consecutive Hadamards or CNOTs on the same qubits).
 
-As an example, I have implemented the first optimization (the angle sums are explicit to show the changes). This example can be run with `main.py test.quil -o`. The result is
+As an example, I have implemented the first optimization (the angle sums are explicit to show the changes). This example can be run with `main.py test.quil -o`. The algorithm for the optimization is equivalent to the translation algorithm, and it works by traversing the DAG and finding consecutive pairs of gates that may be optimized. The result is
 
 ```
 RZ(pi/2) 0
@@ -194,9 +194,9 @@ RZ(pi) 3
 RX(-pi/2) 3
 ```
 
-This optimization reduces the gate depth to 47.
+This optimization reduces the gate depth to 47. Notice that the algorithm was able to detect optimizations even though in the previous, unoptimized version, the gates were not consecutively printed. This is due to the fact that we are using a DAG and we are able to traverse it to find adjacent gates instead of 'reading' a circuit sequentially.
 
-Another example is the implementation of an optimizer that detects two consecutive H gates and returns the identity (again, I have made the identity gate explicit to see the result). This optimizer together with the previous one can be run with `main.py test.quil -oo`, and they reduce the gate depth to 42.
+Another example is the implementation of an optimizer that detects two consecutive H gates and returns the identity (here, I have made the identity gate explicit to see the result, it can be seen in the fourth line). This optimizer together with the previous one can be run with `main.py test.quil -oo`, and they reduce the gate depth to 42.
 
 ```
 RZ(pi/2) 0
@@ -244,15 +244,15 @@ RZ(pi) 3
 RX(-pi/2) 3
 ```
 
-Gate depth is, however, not the only overhead metric we can consider. There are other important limitations in quantum circuits, most of them depending on the specific chip the circuit will run in. For example, we could be interested in reducing the distance between qubits in controlled gates, because the target chip does not allow to control arbitrary qubits. In that case, we would need to have a map of the chip architecture to know which qubits can be control/controlled and either change the layout of the circuit (e.g. by swapping two circuit qubits) or apply swaps during the circuit.
+Gate depth is, however, not the only overhead metric we can consider. There are other important limitations in quantum circuits, most of them depending on the specific chip the circuit will run in. For example, we could be interested in reducing the distance between qubits in controlled gates, because the target chip does not allow to control arbitrary qubits. One way to measure that metric without resorting to specific chip architectures would be to weight every controlled operation by the distance between qubits. In any case, to optimize any suitable metric we would need to either change the layout of the circuit (e.g. by swapping two circuit qubits at the very beginning) or apply swaps during the circuit. Having a map of the chip architecture to know which qubits can be control/controlled would help to make a compilation for a specific chip.
 
-Also, we could consider some metric that relates the gate fidelity to the qubit we are manipulating, in order to reduce noise its effects; or a metric related to the gate depth by 'wire' if the device has different coherent times for different qubits. In that case, it could be useful to have logical qubits with less gates in physical qubits with smaller coherence times. My guess is that this two metrics should specially important in NISQ devices.
+Also, we could consider some metric that relates the gate fidelity to the qubit we are manipulating, in order to reduce noise effects; or a metric related to the gate depth by 'wire' if the device has different coherent times for different qubits. In that case, it could be useful to have logical qubits with less gates in physical qubits with smaller coherence times. My guess is that this two metrics should specially important in NISQ devices.
 
 ### Conclusions
 
 I have implemented a very basic compiler using a DAG to represent quantum circuits. The compiler gets a Quil program as input and prints an equivalent Quil program, using only the specified subset of gates.
 
-As we have seen, the basic translations produce an overhead in different metrics that we can address with optimization techniques, of which the most obvious is gate depth. I have proposed several simple techniques to reduce the gate depth, and I have implemented the simplest ones to show their effect. To this end, the choice of a DAG as the data structure has been quite useful.
+As we have seen, the basic translations produce an overhead in different metrics that we can address with optimization techniques. The most simple of this metrics is gate depth. I have proposed several simple techniques to reduce the gate depth, and I have implemented the simplest ones to show their effect. To this end, the choice of a DAG as the data structure has been quite useful.
 
 To continue with the task, it would be interesting to implement some of the other optimization techniques, like the approximation of single qubit rotations using Euler angles, which may supersede the optimizations I have implemented. Also, I would consider adding other overhead metrics like the ones proposed.
 
