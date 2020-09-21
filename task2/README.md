@@ -12,28 +12,28 @@ For this task, we had to implement a circuit that generates a state with equal p
 
 #### The circuit
 
-Let's first reason what is the simplest circuit that can generate the goal state. So far, the only restriction we've been imposed is that the resulting state have 0.5 probability of measuring |01> and |10>. Any state of the form |01> + e^{i \phi}|10> (up to a global phase) will do.
+Let's first reason what is the simplest circuit that can generate the goal state. So far, the only restriction we've been imposed is that the resulting state have 0.5 probability of measuring |01> and |10>. Any state of the form |01> + e^{iφ}|10> (up to a global phase) will do.
 
-Of course, that's a maximally entangled state, so we'll need a controlled gate to reach it. Therefore, our circuit will need to include at least one CNOT, and in fact only one will suffice. If we can generate the state |10> + e^{i \phi}|11>, a CNOT applied to that state, controlled by the second qubit, will get us the result we want.
+That's an entangled state, in fact it's maximally entangled, so we'll need a controlled gate to reach it. Therefore, our circuit will need to include at least one CNOT, and in fact only one will suffice. If we can generate the state |10> + e^{iφ}|11>, a CNOT applied to that state, controlled by the second qubit, will get us the result we want.
 
-We can generate that intermediate state with two rotations, one on each qubit. Basically, we need a rotation of \pi on the first qubit and a rotation of \pi/2 on the first (or any multiple of those angles), and the gates we choose will determine the relative phase. To keep it simple, I'm choosing two rotations around the Y axis, mainly because this way we can keep the relative phase between both states constant at \pm \pi and the coefficients will be real, but any other combination would do.
+We can generate that intermediate state with two rotations, one on each qubit. Basically, we need a rotation of π on the first qubit and a rotation of π/2 on the first (or any multiple of those angles), and the gates we choose will determine the relative phase. To keep it simple, I'm choosing two rotations around the Y axis, mainly because this way we can keep the relative phase between both states constant at ±π and the coefficients will be real, but any other combination would do.
 
 Therefore, I'm trying to optimize the following circuit:
 
             ┌──────────────┐        
-       q_0: ┤ RY(theta[0]) ├──■───
+       q_0: ┤ RY(θ[0]) ├──■───
             ├──────────────┤┌─┴─┐
-       q_1: ┤ RY(theta[1]) ├┤ X ├─
+       q_1: ┤ RY(θ[1]) ├┤ X ├─
             └──────────────┘└───┘
 
-which we know that would yield the desired state with \theta[0] = n \pi/2 and \theta[1] = \pi, with n=1,3,5...
+which we know that would yield the desired state with θ[0] = nπ/2 and θ[1] = π, with n=1,3,5...
 
 One could think how to make sure we're generating |01> + |10> and not some other state with the same probabilities. The main difficulty here is that we'll be simulating actual measurements, so we won't be able to peek at the coefficients. I can imagine two ways of solving this problem:
 
-1. We can take advantage of our knowledge of the gates and the phases they produce and restrict the first parameter to be in a range that can never introduce a relative phase, say [-pi, pi].
+1. We can take advantage of our knowledge of the gates and the phases they produce and restrict the first parameter to be in a range that can never introduce a relative phase, say [-π, π].
 2. We can measure in a basis that includes the state we want to generate as a basis vector. In this case, we can measure in the Bell basis by applying another CNOT and a Hadamard in the q_0 qubit. This would take |01> + |10> to |10>
 
-I've implemented the second option (in this case, I haven't converted the Hadamard to RXs and RYs, and there is no parameter to optimize). Notice that even though I'm using a gate outside the set of gates we've been allowed, this is only to measure in the right basis and it does not take part on the circuit that generates the desired state. Anyway, the first option would work as well.
+I've implemented the second option (in this case, I haven't converted the Hadamard to RXs and RYs, and there is no parameter to optimize). Notice that even though I'm using a gate outside the set of gates we've been allowed, this is only to measure in the right basis and it does not take part on the circuit that generates the desired state. Anyway, the first option would work as well, but I preferred not to use too much information about the circuit and let the algorithm find the parameters from all the possible range, [0, 4π].
 
 #### Noise generation
 
@@ -54,6 +54,8 @@ The sketch of the algorithm, without entering on details about the gradient desc
 3. Measure the results and compute the cost function.
 4. Update the parameters using gradient descent (i.e. in the direction in which the cost function is minimized the greatest)
 5. Repeat from 2 until convergence.
+
+The entry point of the program is the [main.py](main.py) file,  the [circuit.py](circuit.py) file contains the function that creates the circuit and the [optimizer.py](optimizer.py) file contains the functions that execute the circuit and compute the objective function.
 
 ### Using the program
 
@@ -166,7 +168,7 @@ The coefficients of the final state and the fidelity are:
 | 100    | -0.06725871 | -0.73738353 | -0.66800419 | -0.07424424 | 0.98756 |
 | 1000   | -0.00261953 | -0.70908932 | -0.70510889 | -0.00263432 | 0.99998 |
 
-Notice how, after measuring in the Bell basis, the state has always the same relative phase between |01> and |10>, so we're actually generating an approximation for |01> + |10>. Regarding the convergence towards the state with respect to the number of shots, we see the same behaviour than before. This time, though, we're obtaining coefficients that are closer to the objective for 100 and 1000 iterations. The reason is that by measuring in the Bell basis we are effectively limiting the effect of one of the stochastic behaviours mentioned earlier, namely the fact that we're approximating a random variable with a set of measurements. In the computational basis, the right state (disregarding noise) will produce counts of the |01> and |10> states that are drawn from a binomial distribution, whereas in the Bell basis, all possible combinations of |01> and |10> counts are measured as a |\psi^+> state.
+Notice how, after measuring in the Bell basis, the state has always the same relative phase (0) between |01> and |10>, so we're actually generating an approximation for |01> + |10>. Regarding the convergence towards the state with respect to the number of shots, we see the same behaviour than before. This time, though, we're obtaining coefficients that are closer to the objective for 100 and 1000 iterations. The reason is that by measuring in the Bell basis we are effectively limiting the effect of one of the stochastic behaviours mentioned earlier, namely the fact that we're approximating a random variable with a set of measurements. In the computational basis, the right state (disregarding noise) will produce counts of the |01> and |10> states that are drawn from a binomial distribution, whereas in the Bell basis, all possible combinations of |01> and |10> counts are measured as a |Ψ^+> state.
 
 Finally, the simulated counts are (using only the optimized circuit and measuring it in the computational basis, so we expect an equal number of |01> and |10>):
 
